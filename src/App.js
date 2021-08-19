@@ -1,21 +1,49 @@
 import { useState, useEffect } from "react";
 let id = "";
+let mapNames = [];
 function App() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
   const [restaurants, setRestaurants] = useState([]);
-  
+  const [booking, setBooking] = useState([]);
+
   useEffect(() => {
     fetch("http://localhost:4000/restaurants")
       .then((response) => response.json())
-      .then((data) => setRestaurants(data));
+      .then((data) => {
+        setRestaurants(data);
+        data.forEach((restaurant) => {
+          mapNames[restaurant._id] = restaurant.name;
+        });
+        fetch("http://localhost:4000/books")
+          .then((response) => response.json())
+          .then((data) => {
+            setBooking(data);
+          });
+      });
   }, []);
 
   const deleteRestaurant = async (_id) => {
     const response = await fetch(`http://localhost:4000/restaurant/${_id}`, {
       method: "DELETE",
+    });
+    const responseJson = await response.json();
+  };
+
+  const bookRestaurant = async (id, date) => {
+    const parseDate = date.split("-");
+    const body = {
+      restaurant: id,
+      year: parseDate[0],
+      month: parseDate[1],
+      day: parseDate[2],
+    };
+    const response = await fetch("http://localhost:4000/book", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     });
     const responseJson = await response.json();
   };
@@ -42,7 +70,7 @@ function App() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    id=""
+    id = "";
   };
   const addRestaurant = async () => {
     const body = {
@@ -132,10 +160,11 @@ function App() {
         <thead>
           <tr>
             <th scope="col">#</th>
-            <th scope="col">name</th>
-            <th scope="col">address</th>
-            <th scope="col">city</th>
-            <th scope="col">actions</th>
+            <th scope="col">Name</th>
+            <th scope="col">Address</th>
+            <th scope="col">City</th>
+            <th scope="col">Actions</th>
+            <th scope="col">Booking</th>
           </tr>
         </thead>
         <tbody>
@@ -170,6 +199,34 @@ function App() {
                     Delete
                   </button>
                 </td>
+                <td>
+                  <Book
+                    callback={(date) => {
+                      bookRestaurant(item._id, date);
+                    }}
+                  />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <h3>Booking List</h3>
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Name</th>
+            <th scope="col">Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {booking.map((item, index) => {
+            return (
+              <tr>
+                <th scope="row">{index + 1}</th>
+                <td>{mapNames[item.restaurant]}</td>
+                <td>{new Date(item.date).toDateString()}</td>
               </tr>
             );
           })}
@@ -178,5 +235,36 @@ function App() {
     </div>
   );
 }
+const Book = (props) => {
+  const [date, setDate] = useState("");
+  return (
+    <div>
+      <div class="form-floating mb-3">
+        <input
+          type="date"
+          class="form-control"
+          id="floatingInput"
+          value={date}
+          onChange={(e) => {
+            setDate(e.target.value);
+          }}
+        />
 
+        <label for="floatingInput">Date</label>
+      </div>
+      <button
+        type="button"
+        class="btn btn-primary"
+        onClick={() => {
+          props.callback(date);
+        }}
+        style={{
+          marginLeft: "4px",
+        }}
+      >
+        Book
+      </button>
+    </div>
+  );
+};
 export default App;
