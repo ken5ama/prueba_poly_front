@@ -29,15 +29,32 @@ function App() {
     const response = await fetch(`http://localhost:4000/restaurant/${_id}`, {
       method: "DELETE",
     });
+    tables()
     const responseJson = await response.json();
   };
+
+  const tables =  () => {
+    fetch("http://localhost:4000/restaurants")
+      .then((response) => response.json())
+      .then((data) => {
+        setRestaurants(data);
+        data.forEach((restaurant) => {
+          mapNames[restaurant._id] = restaurant.name;
+        });
+        fetch("http://localhost:4000/books")
+          .then((response) => response.json())
+          .then((data) => {
+            setBooking(data);
+          });
+      });
+  }
 
   const bookRestaurant = async (id, date) => {
     const parseDate = date.split("-");
     const body = {
       restaurant: id,
       year: parseDate[0],
-      month: parseDate[1],
+      month: parseDate[1]-1,
       day: parseDate[2],
     };
     const response = await fetch("http://localhost:4000/book", {
@@ -45,6 +62,7 @@ function App() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+    tables()
     const responseJson = await response.json();
   };
 
@@ -70,6 +88,7 @@ function App() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+    tables()
     id = "";
   };
   const addRestaurant = async () => {
@@ -83,8 +102,15 @@ function App() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
+      
     });
+    setName("")
+    setDescription("" )
+    setAddress("")
+    setCity(" ")
+    tables()
     const responseJson = await response.json();
+    
   };
 
   return (
@@ -155,7 +181,7 @@ function App() {
       >
         Edit
       </button>
-
+      <h3>Restaurants List</h3>
       <table class="table">
         <thead>
           <tr>
